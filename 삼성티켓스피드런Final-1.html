@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>🦁 삼성 티켓 스피드런</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --n:#030d1e;--n2:#071428;--card:#0a1b35;--card2:#0c1e3a;
+  --bd:#162d54;--blue:#0f4fc7;--gold:#f0b429;--gold2:#ffd166;
+  --red:#e8001c;--tx:#dde8f8;--mt:#5a7aaa;--gr:#0fa853;
+  --ff:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR','나눔고딕',sans-serif
+}
+html,body{height:100%;background:var(--n);color:var(--tx);font-family:var(--ff);-webkit-font-smoothing:antialiased}
+
+/* BG */
+.bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(90px)}
+.o1{width:400px;height:400px;background:#0f4fc7;opacity:.14;top:-130px;left:-130px}
+.o2{width:300px;height:300px;background:#f0b429;opacity:.10;bottom:-80px;right:-80px}
+.o3{width:200px;height:200px;background:#e8001c;opacity:.07;top:45%;left:55%}
+
+/* SHELL */
+.shell{position:relative;z-index:1;max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+
+/* HEADER */
+.hdr{padding:22px 18px 0;display:flex;align-items:center;gap:12px}
+.lbox{width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,#0f4fc7,#1a65e0);border:1.5px solid rgba(240,180,41,.3);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 16px rgba(15,79,199,.4);flex-shrink:0}
+.htxt h1{font-size:18px;font-weight:900;color:#fff;letter-spacing:-.3px}
+.htxt h1 em{color:var(--gold);font-style:normal}
+.htxt p{font-size:11px;color:var(--mt);margin-top:2px}
+
+/* PILL */
+.pill{margin:12px 18px 0;background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:10px 14px;display:flex;align-items:center;gap:8px;min-height:44px}
+.vs{background:var(--blue);color:#fff;font-size:9px;font-weight:900;padding:3px 7px;border-radius:5px;flex-shrink:0}
+.pm{font-size:12px;font-weight:700;flex:1}
+.ps{font-size:11px;color:var(--mt);flex-shrink:0}
+
+/* TABS */
+.tabs{margin:12px 18px 0;display:flex;gap:5px}
+.tab{flex:1;padding:9px 2px;background:var(--card);border:1px solid var(--bd);border-radius:10px;color:var(--mt);font-family:var(--ff);font-size:10px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.3;-webkit-tap-highlight-color:transparent}
+.tab .ti{font-size:16px}
+.tab:hover{border-color:var(--blue);color:var(--tx)}
+.tab.on{background:linear-gradient(135deg,var(--blue),#1a65e0);border-color:var(--blue);color:#fff;box-shadow:0 4px 14px rgba(15,79,199,.35)}
+
+/* PAGES */
+.pages{flex:1;padding:13px 18px 34px}
+.pg{display:none}
+.pg.on{display:block;animation:up .28s ease}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* SECTION LABEL */
+.sl{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--mt);text-transform:uppercase;margin:0 0 7px 2px;display:flex;align-items:center;gap:6px}
+
+/* CARD */
+.c{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:14px;margin-bottom:11px}
+.ch{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:5px}
+.ch::before{content:'';width:3px;height:13px;background:var(--gold);border-radius:2px;flex-shrink:0}
+
+/* FIELD */
+.fl{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.fl:last-of-type{margin-bottom:0}
+.fl label{font-size:11px;color:var(--mt);min-width:56px;flex-shrink:0}
+.inp{flex:1;background:var(--n2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:13px;font-family:var(--ff);padding:9px 11px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+.inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(240,180,41,.1)}
+select.inp option{background:var(--n2)}
+
+/* OPP BOX */
+.obox{background:var(--n2);border:1px solid var(--bd);border-radius:10px;padding:13px;min-height:54px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;transition:all .2s}
+.oloading{font-size:12px;color:var(--mt);text-align:center}
+.ofound{display:flex;align-items:center;gap:10px;width:100%}
+.oem{font-size:26px}
+.oinfo h3{font-size:14px;font-weight:900;color:var(--gold)}
+.oinfo p{font-size:11px;color:var(--mt);margin-top:1px}
+.obadge{margin-left:auto;background:linear-gradient(135deg,var(--blue),#1a65e0);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.obadge.manual{background:linear-gradient(135deg,var(--gr),#0d9045)}
+.onone{font-size:12px;color:var(--mt);text-align:center;line-height:1.6}
+
+/* DIVIDER */
+.dv{height:1px;background:var(--bd);margin:12px 0;opacity:.6}
+
+/* TEAM GRID */
+.tg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tbtn{background:var(--n2);border:1px solid var(--bd);border-radius:9px;color:var(--mt);font-size:11px;font-weight:700;font-family:var(--ff);padding:10px 4px;cursor:pointer;text-align:center;transition:all .18s;line-height:1.4;-webkit-tap-highlight-color:transparent}
+.tbtn:hover{border-color:var(--gold);color:var(--tx)}
+.tbtn.on{border-color:var(--gold);background:rgba(240,180,41,.12);color:var(--gold)}
+.tem{font-size:14px;display:block;margin-bottom:2px}
+
+/* SAVE BTN */
+.sbtn{width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),#d49800);border:none;border-radius:12px;color:#0a0a00;font-family:var(--ff);font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 5px 20px rgba(240,180,41,.3);transition:transform .15s,box-shadow .15s;margin-top:2px;-webkit-tap-highlight-color:transparent}
+.sbtn:hover{transform:translateY(-2px);box-shadow:0 9px 28px rgba(240,180,41,.4)}
+.sbtn:active{transform:scale(.98)}
+
+/* TIMER */
+.thero{text-align:center;padding:18px 0 14px}
+.tring{width:185px;height:185px;margin:0 auto 12px;position:relative}
+.tring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.rbg{fill:none;stroke:var(--bd);stroke-width:7}
+.rfg{fill:none;stroke:var(--gold);stroke-width:7;stroke-linecap:round;stroke-dasharray:515;stroke-dashoffset:515;transition:stroke-dashoffset .9s ease,stroke .3s}
+.rfg.urg{stroke:var(--red)}
+.tinner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tnum{font-size:32px;font-weight:900;color:var(--gold);line-height:1;letter-spacing:1px;text-shadow:0 0 20px rgba(240,180,41,.4);transition:color .3s}
+.tnum.urg{color:var(--red);text-shadow:0 0 20px rgba(232,0,28,.5)}
+.tnum.opn{font-size:22px;animation:pop .4s infinite alternate}
+@keyframes pop{from{transform:scale(1)}to{transform:scale(1.07)}}
+.tsub{font-size:10px;color:var(--mt);margin-top:4px;letter-spacing:.5px}
+.topenat{text-align:center;font-size:13px;font-weight:700;color:var(--tx);margin-top:5px}
+.tlbl{font-size:12px;color:var(--mt);text-align:center;margin-bottom:4px}
+
+.abtn{width:100%;padding:12px;background:linear-gradient(135deg,var(--blue),#1a65e0);border:none;border-radius:10px;color:#fff;font-family:var(--ff);font-weight:700;font-size:13px;cursor:pointer;margin-top:3px;box-shadow:0 4px 14px rgba(15,79,199,.3);transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.abtn:hover{transform:translateY(-1px)}
+.abtn:active{transform:scale(.98)}
+
+/* CHECKLIST */
+.ci{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid rgba(22,45,84,.8);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ci:last-child{border-bottom:none}
+.cb{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent;transition:all .2s;flex-shrink:0}
+.ci.dn .cb{background:var(--gr);border-color:var(--gr);color:#fff}
+.ci span{font-size:13px;flex:1;transition:color .2s}
+.ci.dn span{color:var(--mt);text-decoration:line-through}
+.dbtn{background:none;border:none;color:var(--bd);font-size:15px;cursor:pointer;padding:0 4px;transition:color .2s;line-height:1;-webkit-tap-highlight-color:transparent}
+.dbtn:hover{color:var(--red)}
+
+.pw{margin:11px 0 4px}
+.pb{height:4px;background:var(--bd);border-radius:99px;overflow:hidden}
+.pf{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:99px;transition:width .4s ease}
+.pt{font-size:11px;color:var(--mt);margin-top:5px;display:flex;justify-content:space-between}
+.pt span:last-child{color:var(--gold);font-weight:700}
+
+.arow{display:flex;gap:7px;margin-top:11px}
+.ainp{flex:1;background:var(--n2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:13px;font-family:var(--ff);padding:9px 11px;outline:none;transition:border-color .2s}
+.ainp:focus{border-color:var(--gold)}
+.addbtn{background:linear-gradient(135deg,var(--blue),#1a65e0);border:none;border-radius:8px;color:#fff;font-family:var(--ff);font-weight:700;font-size:12px;padding:9px 14px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+
+.rbtn{width:100%;padding:11px;background:transparent;border:1px solid var(--bd);border-radius:10px;color:var(--mt);font-family:var(--ff);font-weight:700;font-size:12px;cursor:pointer;margin-top:7px;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.rbtn:hover{border-color:var(--tx);color:var(--tx)}
+
+/* GO */
+.schip{background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.25);border-radius:10px;padding:11px 15px;font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px;text-align:center}
+.gobtn{width:100%;padding:19px;background:linear-gradient(135deg,#b8001a,var(--red),#ff2a45);border:none;border-radius:15px;color:#fff;font-family:var(--ff);font-weight:900;font-size:17px;letter-spacing:.8px;cursor:pointer;margin-bottom:11px;box-shadow:0 8px 28px rgba(232,0,28,.4);transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.gobtn:hover{transform:translateY(-2px);box-shadow:0 13px 36px rgba(232,0,28,.55)}
+.gobtn:active{transform:scale(.98)}
+.gobtn::before{content:'';position:absolute;top:-50%;left:-70%;width:34%;height:200%;background:rgba(255,255,255,.17);transform:skewX(-22deg);animation:sheen 3.5s infinite}
+@keyframes sheen{0%,100%{left:-70%}50%{left:130%}}
+
+.lrow{display:flex;flex-direction:column;gap:7px;margin-bottom:11px}
+.ltile{display:flex;align-items:center;gap:11px;padding:12px 14px;background:var(--card2);border:1px solid var(--bd);border-radius:12px;text-decoration:none;transition:border-color .2s,background .2s;-webkit-tap-highlight-color:transparent}
+.ltile:hover{border-color:var(--gold);background:rgba(240,180,41,.04)}
+.lic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.lic.bl{background:rgba(15,79,199,.18)}
+.lic.gd{background:rgba(240,180,41,.14)}
+.lic.rd{background:rgba(232,0,28,.14)}
+.ltile h4{font-size:13px;font-weight:700;color:var(--tx)}
+.ltile p{font-size:11px;color:var(--mt);margin-top:2px}
+.larr{margin-left:auto;color:var(--bd);font-size:13px}
+
+.tip{background:linear-gradient(135deg,rgba(15,79,199,.1),rgba(240,180,41,.05));border:1px solid rgba(15,79,199,.22);border-radius:12px;padding:13px 15px;font-size:12px;color:#8aacd8;line-height:1.9}
+.tip strong{color:var(--gold2)}
+
+/* TOAST */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);background:rgba(8,20,42,.96);border:1px solid var(--gr);color:#fff;font-size:12px;font-weight:700;font-family:var(--ff);padding:11px 22px;border-radius:99px;z-index:999;transition:transform .28s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,.45)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="orb o3"></div>
+</div>
+
+<div class="shell">
+
+  <div class="hdr">
+    <div class="lbox">🦁</div>
+    <div class="htxt">
+      <h1>삼성 티켓 <em>스피드런</em></h1>
+      <p>대구 라이온즈파크 · 결제까지 최속</p>
+    </div>
+  </div>
+
+  <div class="pill" id="gamePill">
+    <span class="vs">VS</span>
+    <span class="pm" id="pillMain">경기 정보를 설정하세요</span>
+    <span class="ps" id="pillSub"></span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" id="tab-game" onclick="goTab('game')"><span class="ti">⚾</span>경기설정</button>
+    <button class="tab" id="tab-timer" onclick="goTab('timer')"><span class="ti">⏱</span>타이머</button>
+    <button class="tab" id="tab-check" onclick="goTab('check')"><span class="ti">✅</span>체크리스트</button>
+    <button class="tab" id="tab-go" onclick="goTab('go')"><span class="ti">🎟</span>GO!</button>
+  </div>
+
+  <div class="pages">
+
+    <!-- 경기설정 -->
+    <div id="pg-game" class="pg on">
+      <div class="sl">경기 정보</div>
+      <div class="c">
+        <div class="fl">
+          <label>경기 날짜</label>
+          <input id="gameDate" type="date" class="inp" onchange="onDateChange()" oninput="onDateChange()">
+        </div>
+        <div class="fl">
+          <label>경기 시간</label>
+          <input id="gameTime" type="time" class="inp" value="18:30">
+        </div>
+        <div class="fl">
+          <label>오픈 시간</label>
+          <input id="openTime" type="time" class="inp" value="10:00">
+        </div>
+      </div>
+
+      <div class="sl">상대팀 <span style="font-size:10px;color:var(--mt);text-transform:none;letter-spacing:0;font-weight:400">(날짜 선택 시 자동 표시)</span></div>
+      <div class="c">
+        <div class="obox" id="oppBox">
+          <div class="oloading">📅 경기 날짜를 먼저 선택하세요</div>
+        </div>
+        <div class="dv"></div>
+        <div class="ch" style="margin-bottom:9px;font-size:10px">직접 선택</div>
+        <div class="tg">
+          <button class="tbtn" id="tbtn-두산" onclick="pickTeam('두산','🐻')"><span class="tem">🐻</span>두산</button>
+          <button class="tbtn" id="tbtn-LG" onclick="pickTeam('LG','🔴')"><span class="tem">🔴</span>LG</button>
+          <button class="tbtn" id="tbtn-KT" onclick="pickTeam('KT','⚫')"><span class="tem">⚫</span>KT</button>
+          <button class="tbtn" id="tbtn-NC" onclick="pickTeam('NC','🔵')"><span class="tem">🔵</span>NC</button>
+          <button class="tbtn" id="tbtn-롯데" onclick="pickTeam('롯데','⚾')"><span class="tem">⚾</span>롯데</button>
+          <button class="tbtn" id="tbtn-KIA" onclick="pickTeam('KIA','🐯')"><span class="tem">🐯</span>KIA</button>
+          <button class="tbtn" id="tbtn-한화" onclick="pickTeam('한화','🦅')"><span class="tem">🦅</span>한화</button>
+          <button class="tbtn" id="tbtn-키움" onclick="pickTeam('키움','🟥')"><span class="tem">🟥</span>키움</button>
+          <button class="tbtn" id="tbtn-SSG" onclick="pickTeam('SSG','🔴')"><span class="tem">🔴</span>SSG</button>
+        </div>
+      </div>
+
+      <div class="sl">좌석 설정</div>
+      <div class="c">
+        <div class="fl">
+          <label>구역</label>
+          <select id="seatZone" class="inp">
+            <option value="3루 내야 지정석">3루 내야 지정석 ⭐</option>
+            <option value="3루 테이블석">3루 테이블석 ⭐</option>
+            <option value="3루 외야석">3루 외야석</option>
+            <option value="3루 응원석">3루 응원석</option>
+            <option value="3루 익사이팅석">3루 익사이팅석</option>
+            <option value="3루 VIP">3루 VIP</option>
+          </select>
+        </div>
+        <div class="fl">
+          <label>인원수</label>
+          <select id="seatCount" class="inp">
+            <option>1명</option><option>2명</option><option>3명</option>
+            <option selected>4명</option><option>5명</option><option>6명</option>
+          </select>
+        </div>
+      </div>
+      <button class="sbtn" onclick="saveAll()">⚡ 설정 저장 · 타이머 시작</button>
+    </div>
+
+    <!-- 타이머 -->
+    <div id="pg-timer" class="pg">
+      <div class="thero">
+        <div class="tlbl">티켓 오픈까지</div>
+        <div class="tring">
+          <svg viewBox="0 0 190 190">
+            <circle class="rbg" cx="95" cy="95" r="82"/>
+            <circle class="rfg" id="ringFg" cx="95" cy="95" r="82"/>
+          </svg>
+          <div class="tinner">
+            <div class="tnum" id="timerNum">--:--:--</div>
+            <div class="tsub" id="timerSub">설정 필요</div>
+          </div>
+        </div>
+        <div class="topenat" id="openAtTxt"></div>
+      </div>
+      <div class="sl">수동 시간 변경</div>
+      <div class="c">
+        <div class="fl">
+          <label>날짜</label>
+          <input id="mDate" type="date" class="inp">
+        </div>
+        <div class="fl">
+          <label>오픈 시간</label>
+          <input id="mTime" type="time" class="inp" value="10:00">
+        </div>
+        <button class="abtn" onclick="applyManual()">⏰ 타이머 적용</button>
+      </div>
+      <div class="tip">
+        <strong>💡 대기 팁</strong><br>
+        5분 전부터 빨간색으로 바뀌어요<br>
+        오픈 시 자동으로 GO 탭으로 이동합니다!
+      </div>
+    </div>
+
+    <!-- 체크리스트 -->
+    <div id="pg-check" class="pg">
+      <div class="sl">오픈 전 필수 체크</div>
+      <div class="c">
+        <div id="chkList"></div>
+        <div class="pw">
+          <div class="pb"><div class="pf" id="progFill" style="width:0%"></div></div>
+          <div class="pt"><span id="progMsg">항목을 탭해서 완료 표시</span><span id="progCnt">0/0</span></div>
+        </div>
+      </div>
+      <div class="sl">항목 추가</div>
+      <div class="c">
+        <div class="arow">
+          <input id="addInp" class="ainp" type="text" placeholder="예: 삼성페이 준비 완료" maxlength="30">
+          <button class="addbtn" onclick="addChk()">추가</button>
+        </div>
+      </div>
+      <button class="rbtn" onclick="resetChk()">🔄 전체 초기화</button>
+    </div>
+
+    <!-- GO -->
+    <div id="pg-go" class="pg">
+      <div class="schip" id="seatChip">📍 3루 내야 지정석 · 4명</div>
+      <button class="gobtn" onclick="goBuy()">🎟 티켓링크 예매 바로가기!</button>
+      <div class="lrow">
+        <a class="ltile" href="https://www.samsunglions.com/game/schedule.asp" target="_blank">
+          <div class="lic gd">📅</div>
+          <div><h4>삼성 공식 일정</h4><p>홈경기 날짜 · 티켓 오픈 일정</p></div>
+          <span class="larr">→</span>
+        </a>
+        <a class="ltile" href="https://www.ticketlink.co.kr/sports/baseball/6" target="_blank">
+          <div class="lic bl">🎫</div>
+          <div><h4>티켓링크 삼성 홈경기</h4><p>전체 홈경기 예매 목록</p></div>
+          <span class="larr">→</span>
+        </a>
+        <a class="ltile" href="https://www.ticketlink.co.kr/member/card" target="_blank">
+          <div class="lic rd">💳</div>
+          <div><h4>카드 사전 등록</h4><p>결제 카드 미리 등록 필수!</p></div>
+          <span class="larr">→</span>
+        </a>
+      </div>
+      <div class="tip">
+        <strong>⚡ 스피드런 순서</strong><br>
+        1. 티켓링크 접속 → 경기 선택<br>
+        2. 3루 구역 필터 → 4자리 연속 선택<br>
+        3. 예매하기 → 즉시 카드 결제<br><br>
+        <strong>💡 꿀팁:</strong> PC + 모바일 동시 접속!<br>
+        삼성카드 할인 여부 미리 확인하세요
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ──────────────────────────────────────────
+// 삼성 홈경기 일정 (날짜 → 상대팀)
+// ──────────────────────────────────────────
+var SCH = {
+  "2025-03-22":"LG","2025-03-23":"LG","2025-03-25":"KIA","2025-03-26":"KIA","2025-03-27":"KIA",
+  "2025-03-28":"키움","2025-03-29":"키움","2025-03-30":"키움",
+  "2025-04-01":"한화","2025-04-02":"한화","2025-04-03":"한화",
+  "2025-04-04":"두산","2025-04-05":"두산","2025-04-06":"두산",
+  "2025-04-08":"NC","2025-04-09":"NC","2025-04-10":"NC",
+  "2025-04-11":"롯데","2025-04-12":"롯데","2025-04-13":"롯데",
+  "2025-04-15":"KT","2025-04-16":"KT","2025-04-17":"KT",
+  "2025-04-18":"SSG","2025-04-19":"SSG","2025-04-20":"SSG",
+  "2025-04-25":"두산","2025-04-26":"두산","2025-04-27":"두산",
+  "2025-04-29":"NC","2025-04-30":"NC",
+  "2025-05-01":"NC","2025-05-02":"롯데","2025-05-03":"롯데","2025-05-04":"롯데",
+  "2025-05-06":"한화","2025-05-07":"한화","2025-05-08":"한화",
+  "2025-05-09":"KIA","2025-05-10":"KIA","2025-05-11":"KIA",
+  "2025-05-16":"LG","2025-05-17":"LG","2025-05-18":"LG",
+  "2025-05-20":"키움","2025-05-21":"키움","2025-05-22":"키움",
+  "2025-05-23":"KT","2025-05-24":"KT","2025-05-25":"KT",
+  "2025-05-27":"SSG","2025-05-28":"SSG","2025-05-29":"SSG",
+  "2025-05-30":"두산","2025-05-31":"두산",
+  "2025-06-01":"두산","2025-06-03":"NC","2025-06-04":"NC","2025-06-05":"NC",
+  "2025-06-06":"롯데","2025-06-07":"롯데","2025-06-08":"롯데",
+  "2025-06-10":"한화","2025-06-11":"한화","2025-06-12":"한화",
+  "2025-06-17":"KIA","2025-06-18":"KIA","2025-06-19":"KIA",
+  "2025-06-20":"LG","2025-06-21":"LG","2025-06-22":"LG",
+  "2025-06-24":"키움","2025-06-25":"키움","2025-06-26":"키움",
+  "2025-06-27":"KT","2025-06-28":"KT","2025-06-29":"KT",
+  "2025-07-01":"SSG","2025-07-02":"SSG","2025-07-03":"SSG",
+  "2025-07-04":"두산","2025-07-05":"두산","2025-07-06":"두산",
+  "2025-07-08":"NC","2025-07-09":"NC","2025-07-10":"NC",
+  "2025-07-11":"롯데","2025-07-12":"롯데","2025-07-13":"롯데",
+  "2025-07-18":"한화","2025-07-19":"한화","2025-07-20":"한화",
+  "2025-07-22":"KIA","2025-07-23":"KIA","2025-07-24":"KIA",
+  "2025-07-25":"LG","2025-07-26":"LG","2025-07-27":"LG",
+  "2025-07-29":"키움","2025-07-30":"키움","2025-07-31":"키움",
+  "2025-08-01":"KT","2025-08-02":"KT","2025-08-03":"KT",
+  "2025-08-05":"SSG","2025-08-06":"SSG","2025-08-07":"SSG",
+  "2025-08-08":"두산","2025-08-09":"두산","2025-08-10":"두산",
+  "2025-08-12":"NC","2025-08-13":"NC","2025-08-14":"NC",
+  "2025-08-15":"롯데","2025-08-16":"롯데","2025-08-17":"롯데",
+  "2025-08-22":"한화","2025-08-23":"한화","2025-08-24":"한화",
+  "2025-08-26":"KIA","2025-08-27":"KIA","2025-08-28":"KIA",
+  "2025-08-29":"LG","2025-08-30":"LG","2025-08-31":"LG",
+  "2025-09-02":"키움","2025-09-03":"키움","2025-09-04":"키움",
+  "2025-09-05":"KT","2025-09-06":"KT","2025-09-07":"KT",
+  "2025-09-09":"SSG","2025-09-10":"SSG","2025-09-11":"SSG",
+  "2025-09-16":"두산","2025-09-17":"두산","2025-09-18":"두산",
+  "2025-09-19":"NC","2025-09-20":"NC","2025-09-21":"NC",
+  "2025-09-23":"롯데","2025-09-24":"롯데","2025-09-25":"롯데",
+  "2026-03-28":"LG","2026-03-29":"LG","2026-03-30":"LG",
+  "2026-04-01":"두산","2026-04-02":"두산","2026-04-03":"두산",
+  "2026-04-07":"KT","2026-04-08":"KT","2026-04-09":"KT",
+  "2026-04-10":"NC","2026-04-11":"NC","2026-04-12":"NC",
+  "2026-04-14":"롯데","2026-04-15":"롯데","2026-04-16":"롯데",
+  "2026-04-17":"한화","2026-04-18":"한화","2026-04-19":"한화",
+  "2026-04-21":"KIA","2026-04-22":"KIA","2026-04-23":"KIA",
+  "2026-04-24":"키움","2026-04-25":"키움","2026-04-26":"키움",
+  "2026-04-28":"SSG","2026-04-29":"SSG","2026-04-30":"SSG",
+  "2026-05-01":"LG","2026-05-02":"LG","2026-05-03":"LG",
+  "2026-05-05":"두산","2026-05-06":"두산","2026-05-07":"두산",
+  "2026-05-08":"KT","2026-05-09":"KT","2026-05-10":"KT",
+  "2026-05-12":"NC","2026-05-13":"NC","2026-05-14":"NC",
+  "2026-05-15":"롯데","2026-05-16":"롯데","2026-05-17":"롯데",
+  "2026-05-19":"한화","2026-05-20":"한화","2026-05-21":"한화",
+  "2026-05-22":"KIA","2026-05-23":"KIA","2026-05-24":"KIA",
+  "2026-05-26":"키움","2026-05-27":"키움","2026-05-28":"키움",
+  "2026-05-29":"SSG","2026-05-30":"SSG","2026-05-31":"SSG"
+};
+
+var EMOJI = {"두산":"🐻","LG":"🔴","KT":"⚫","NC":"🔵","롯데":"⚾","KIA":"🐯","한화":"🦅","키움":"🟥","SSG":"🔴"};
+
+// ──────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────
+var S = {
+  gameDate:'', gameTime:'18:30', openTime:'10:00',
+  opponent:'', oppEmoji:'',
+  seatZone:'3루 내야 지정석', seatCount:'4명',
+  checks:[
+    {t:'티켓링크 앱 설치 완료', d:false},
+    {t:'로그인 상태 유지 확인', d:false},
+    {t:'결제 카드 사전 등록', d:false},
+    {t:'배송 / 수령 방법 설정', d:false},
+    {t:'오픈 5분 전 페이지 대기', d:false},
+    {t:'Wi-Fi or 5G 연결 확인', d:false}
+  ]
+};
+
+var timerIv = null;
+var target  = null;
+var CIRCUM  = 2 * Math.PI * 82; // ≈515
+
+// ──────────────────────────────────────────
+// TABS
+// ──────────────────────────────────────────
+function goTab(id) {
+  var pages = ['game','timer','check','go'];
+  for (var i = 0; i < pages.length; i++) {
+    var pg = document.getElementById('pg-' + pages[i]);
+    var tb = document.getElementById('tab-' + pages[i]);
+    if (pages[i] === id) {
+      pg.className = 'pg on';
+      tb.className = 'tab on';
+    } else {
+      pg.className = 'pg';
+      tb.className = 'tab';
+    }
+  }
+  if (id === 'check') renderChk();
+  if (id === 'go')    updateGo();
+  if (id === 'timer') updateOpenAt();
+}
+
+// ──────────────────────────────────────────
+// 날짜 변경 → 상대팀 자동 감지
+// ──────────────────────────────────────────
+function onDateChange() {
+  var d   = document.getElementById('gameDate').value;
+  var box = document.getElementById('oppBox');
+  S.gameDate = d;
+
+  if (!d) {
+    box.innerHTML = '<div class="oloading">📅 경기 날짜를 먼저 선택하세요</div>';
+    return;
+  }
+
+  // 모든 팀 버튼 초기화
+  var teams = ['두산','LG','KT','NC','롯데','KIA','한화','키움','SSG'];
+  for (var i = 0; i < teams.length; i++) {
+    var btn = document.getElementById('tbtn-' + teams[i]);
+    if (btn) btn.className = 'tbtn';
+  }
+
+  var opp = SCH[d];
+  if (opp) {
+    var em = EMOJI[opp] || '⚾';
+    S.opponent  = opp;
+    S.oppEmoji  = em;
+    // 해당 팀 버튼 하이라이트
+    var hBtn = document.getElementById('tbtn-' + opp);
+    if (hBtn) hBtn.className = 'tbtn on';
+    box.innerHTML =
+      '<div class="ofound">' +
+        '<span class="oem">' + em + '</span>' +
+        '<div class="oinfo"><h3>삼성 vs ' + opp + '</h3><p>홈경기 확인됨</p></div>' +
+        '<span class="obadge">자동 감지</span>' +
+      '</div>';
+  } else {
+    S.opponent = '';
+    S.oppEmoji = '';
+    box.innerHTML =
+      '<div class="onone">📋 ' + d + ' 홈경기 일정이 없습니다<br>아래에서 직접 선택하세요</div>';
+  }
+}
+
+// ──────────────────────────────────────────
+// 팀 직접 선택
+// ──────────────────────────────────────────
+function pickTeam(name, em) {
+  var teams = ['두산','LG','KT','NC','롯데','KIA','한화','키움','SSG'];
+  for (var i = 0; i < teams.length; i++) {
+    var btn = document.getElementById('tbtn-' + teams[i]);
+    if (btn) btn.className = (teams[i] === name) ? 'tbtn on' : 'tbtn';
+  }
+  S.opponent = name;
+  S.oppEmoji = em;
+  var box = document.getElementById('oppBox');
+  box.innerHTML =
+    '<div class="ofound">' +
+      '<span class="oem">' + em + '</span>' +
+      '<div class="oinfo"><h3>삼성 vs ' + name + '</h3><p>직접 선택됨</p></div>' +
+      '<span class="obadge manual">선택됨</span>' +
+    '</div>';
+}
+
+// ──────────────────────────────────────────
+// 설정 저장
+// ──────────────────────────────────────────
+function saveAll() {
+  S.gameDate  = document.getElementById('gameDate').value;
+  S.gameTime  = document.getElementById('gameTime').value;
+  S.openTime  = document.getElementById('openTime').value;
+  S.seatZone  = document.getElementById('seatZone').value;
+  S.seatCount = document.getElementById('seatCount').value;
+
+  // 날짜 기반으로 상대팀 다시 확인 (onchange 미발동 대비)
+  if (S.gameDate && !S.opponent && SCH[S.gameDate]) {
+    S.opponent = SCH[S.gameDate];
+    S.oppEmoji = EMOJI[S.opponent] || '⚾';
+  }
+
+  if (!S.gameDate)  { toast('❗ 경기 날짜를 선택하세요'); return; }
+  if (!S.opponent)  { toast('❗ 상대팀을 선택하세요'); return; }
+
+  startTimer(S.gameDate, S.openTime);
+  updatePill();
+  toast('✅ 저장! 타이머 시작!');
+  setTimeout(function() {
+    goTab('timer');
+    updateOpenAt();
+  }, 700);
+}
+
+function updatePill() {
+  if (!S.gameDate || !S.opponent) return;
+  var d = new Date(S.gameDate + 'T00:00:00');
+  document.getElementById('pillMain').textContent =
+    S.oppEmoji + ' 삼성 vs ' + S.opponent + ' · ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+  document.getElementById('pillSub').textContent = S.gameTime;
+}
+
+// ──────────────────────────────────────────
+// 타이머
+// ──────────────────────────────────────────
+function startTimer(dateStr, timeStr) {
+  var tp = timeStr.split(':');
+  var dp = dateStr.split('-');
+  target = new Date(+dp[0], +dp[1]-1, +dp[2], +tp[0], +tp[1], 0);
+  if (timerIv) clearInterval(timerIv);
+  timerIv = setInterval(tick, 1000);
+  tick();
+}
+
+function applyManual() {
+  var d = document.getElementById('mDate').value;
+  var t = document.getElementById('mTime').value;
+  if (!d || !t) { toast('❗ 날짜와 시간을 입력하세요'); return; }
+  startTimer(d, t);
+  toast('⏰ 타이머 적용!');
+}
+
+function tick() {
+  if (!target) return;
+  var diff   = Math.floor((target - Date.now()) / 1000);
+  var numEl  = document.getElementById('timerNum');
+  var ringEl = document.getElementById('ringFg');
+  var subEl  = document.getElementById('timerSub');
+
+  if (diff <= 0) {
+    numEl.textContent = '🔥 오픈!';
+    numEl.className   = 'tnum opn';
+    ringEl.style.strokeDashoffset = '0';
+    ringEl.className = 'rfg urg';
+    clearInterval(timerIv);
+    toast('🔥 오픈! 지금 바로 GO!');
+    setTimeout(function() {
+      goTab('go');
+      updateGo();
+    }, 1200);
+    return;
+  }
+
+  var h = Math.floor(diff / 3600);
+  var m = Math.floor((diff % 3600) / 60);
+  var sec = diff % 60;
+  numEl.textContent = pad(h) + ':' + pad(m) + ':' + pad(sec);
+
+  var isUrg = diff < 300;
+  numEl.className   = 'tnum' + (isUrg ? ' urg' : '');
+  ringEl.className  = 'rfg' + (isUrg ? ' urg' : '');
+
+  var ratio = Math.max(0, Math.min(1, diff / (24 * 3600)));
+  ringEl.style.strokeDasharray  = '' + CIRCUM;
+  ringEl.style.strokeDashoffset = '' + (CIRCUM * (1 - ratio));
+  subEl.textContent = isUrg ? '⚡ 곧 오픈!' : '대기 중...';
+}
+
+function updateOpenAt() {
+  var el = document.getElementById('openAtTxt');
+  if (!target) { el.textContent = ''; return; }
+  el.textContent = '오픈 예정: ' + (target.getMonth()+1) + '월 ' + target.getDate() + '일 '
+    + pad(target.getHours()) + ':' + pad(target.getMinutes());
+}
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+// ──────────────────────────────────────────
+// 체크리스트
+// ──────────────────────────────────────────
+function renderChk() {
+  var el = document.getElementById('chkList');
+  el.innerHTML = '';
+  for (var i = 0; i < S.checks.length; i++) {
+    (function(idx) {
+      var item = S.checks[idx];
+      var div  = document.createElement('div');
+      div.className = 'ci' + (item.d ? ' dn' : '');
+
+      var box = document.createElement('div');
+      box.className = 'cb';
+      box.textContent = '✓';
+
+      var span = document.createElement('span');
+      span.textContent = item.t;
+
+      var del = document.createElement('button');
+      del.className   = 'dbtn';
+      del.textContent = '✕';
+      del.onclick = function(e) {
+        e.stopPropagation();
+        S.checks.splice(idx, 1);
+        renderChk();
+      };
+
+      div.onclick = function() { toggleChk(idx); };
+      div.appendChild(box);
+      div.appendChild(span);
+      div.appendChild(del);
+      el.appendChild(div);
+    })(i);
+  }
+  updateProg();
+}
+
+function toggleChk(i) {
+  S.checks[i].d = !S.checks[i].d;
+  renderChk();
+  var all = S.checks.every(function(c) { return c.d; });
+  if (all) toast('🚀 모든 준비 완료!');
+}
+
+function addChk() {
+  var inp = document.getElementById('addInp');
+  var t   = inp.value.trim();
+  if (!t) return;
+  S.checks.push({t: t, d: false});
+  inp.value = '';
+  renderChk();
+  toast('➕ 항목 추가됨');
+}
+
+function resetChk() {
+  for (var i = 0; i < S.checks.length; i++) S.checks[i].d = false;
+  renderChk();
+  toast('🔄 초기화 완료');
+}
+
+function delChk(i) {
+  S.checks.splice(i, 1);
+  renderChk();
+}
+
+function updateProg() {
+  var total = S.checks.length;
+  var done  = 0;
+  for (var i = 0; i < S.checks.length; i++) if (S.checks[i].d) done++;
+  var pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progCnt').textContent  = done + '/' + total;
+  var msgs = ['항목을 탭해서 완료 표시','시작했어요!','잘 하고 있어요!','거의 다 됐어요!','마지막 하나!'];
+  var idx  = total === 0 ? 0 : Math.min(Math.floor(done / total * 4), 4);
+  document.getElementById('progMsg').textContent =
+    total === 0 ? '' : (done === total ? '🎉 모든 준비 완료!' : msgs[idx]);
+}
+
+// ──────────────────────────────────────────
+// GO
+// ──────────────────────────────────────────
+function updateGo() {
+  document.getElementById('seatChip').textContent = '📍 ' + S.seatZone + ' · ' + S.seatCount;
+}
+
+function goBuy() {
+  window.open('https://www.ticketlink.co.kr/sports/baseball/6', '_blank');
+  toast('🎟 티켓링크 열기!');
+}
+
+// ──────────────────────────────────────────
+// TOAST
+// ──────────────────────────────────────────
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show';
+  setTimeout(function() { el.className = 'toast'; }, 2400);
+}
+
+// ──────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────
+window.onload = function() {
+  var t   = new Date();
+  var ymd = t.getFullYear() + '-' + pad(t.getMonth()+1) + '-' + pad(t.getDate());
+  document.getElementById('gameDate').value = ymd;
+  document.getElementById('mDate').value    = ymd;
+  // 렌더링 완료 후 실행
+  setTimeout(function() {
+    onDateChange();
+    renderChk();
+  }, 50);
+};
+</script>
+</body>
+</html>
