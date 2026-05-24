@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="번호판확인">
+<meta name="theme-color" content="#060a12">
+<meta name="mobile-web-app-capable" content="yes">
+<title>번호판 확인 시스템</title>
+<link rel="manifest" href="data:application/json,{%22name%22:%22%EB%B2%88%ED%98%B8%ED%8C%90%20%ED%99%95%EC%9D%B8%22,%22short_name%22:%22%EB%B2%88%ED%98%B8%ED%8C%90%22,%22display%22:%22standalone%22,%22background_color%22:%22%23060a12%22,%22theme_color%22:%22%2338bdf8%22}">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060a12;--s1:#0c1220;--s2:#111827;
+  --border:rgba(56,189,248,.18);--accent:#38bdf8;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;
+  --text:#e2e8f0;--muted:#64748b;--dim:#334155;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif}
+body{display:flex;flex-direction:column;min-height:100dvh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(56,189,248,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.03) 1px,transparent 1px);
+  background-size:36px 36px}
+
+/* 헤더 */
+.hd{flex-shrink:0;z-index:50;background:rgba(6,10,18,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0}
+.hd-l{display:flex;align-items:center;gap:10px}
+.logo{width:36px;height:36px;border-radius:10px;font-size:18px;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(14,165,233,.4)}
+.lt{font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:.05em}
+.ls{font-size:11px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* 탭 */
+.tabs{flex-shrink:0;display:flex;border-bottom:1px solid rgba(56,189,248,.08);z-index:10;position:sticky;top:61px;background:var(--bg)}
+.tab{flex:1;padding:11px;font-size:13px;font-weight:600;border:none;outline:none;background:transparent;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;font-family:'Noto Sans KR',sans-serif}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent);background:rgba(56,189,248,.04)}
+
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative;z-index:1}
+.pg{display:none;padding:14px 14px 80px}.pg.on{display:block}
+
+/* API 키 */
+.keybox{border-radius:14px;margin-bottom:12px;overflow:hidden;border:2px solid rgba(245,158,11,.35);background:rgba(245,158,11,.04)}
+.keybox.saved{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.04)}
+.keybox-head{display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.keybox-title{flex:1;font-size:13px;font-weight:700;color:var(--amber)}
+.keybox.saved .keybox-title{color:#34d399}
+.keystatus{font-size:11px;padding:3px 9px;border-radius:999px;font-weight:700}
+.keystatus.need{background:rgba(245,158,11,.18);color:#fbbf24}
+.keystatus.ok{background:rgba(16,185,129,.18);color:#34d399}
+.keybox-body{padding:0 14px 14px;display:none}
+.keybox-body.open{display:block}
+.keyrow{display:flex;gap:8px;margin-bottom:8px}
+.keyinput{flex:1;padding:11px 13px;border-radius:10px;font-size:12px;font-family:monospace;background:rgba(0,0,0,.45);border:1px solid rgba(245,158,11,.25);color:var(--text);outline:none}
+.keyinput:focus{border-color:var(--amber)}
+.keybtn{padding:11px 14px;border-radius:10px;font-size:12px;font-weight:700;background:rgba(245,158,11,.2);color:var(--amber);border:1px solid rgba(245,158,11,.3);cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR',sans-serif}
+.keyhint{font-size:11px;color:var(--muted);line-height:1.8;margin-top:8px}
+.keyhint a{color:var(--accent);text-decoration:none}
+
+/* 엑셀 */
+.xbar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:12px;background:var(--s1);border:1px solid var(--border)}
+.xbar-info{flex:1;min-width:0}.xbar-lbl{font-size:10px;color:var(--muted)}
+.xbar-nm{font-size:12px;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xbtn{padding:7px 13px;border-radius:8px;font-size:12px;font-weight:700;background:rgba(56,189,248,.12);color:var(--accent);border:1px solid rgba(56,189,248,.25);cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR',sans-serif}
+
+/* 촬영 버튼 */
+.shoot-label{display:flex;width:100%;padding:22px 18px;border-radius:18px;font-size:18px;font-weight:900;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;cursor:pointer;margin-bottom:12px;box-shadow:0 6px 32px rgba(14,165,233,.4);font-family:'Noto Sans KR',sans-serif;align-items:center;justify-content:center;gap:12px;-webkit-user-select:none;user-select:none;position:relative;overflow:hidden;transition:all .15s}
+.shoot-label::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12),transparent)}
+.shoot-label:active{transform:scale(.97)}
+.shoot-hint{font-size:11px;opacity:.75;font-weight:400;margin-top:3px;display:block}
+
+/* 미리보기 */
+.preview-wrap{position:relative;border-radius:16px;overflow:hidden;margin-bottom:10px;background:var(--s2);border:1px solid var(--border);display:none}
+#preview-img{width:100%;display:block;max-height:280px;object-fit:cover}
+.preview-info{position:absolute;bottom:0;left:0;right:0;padding:8px 12px;background:linear-gradient(transparent,rgba(0,0,0,.75));display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.7)}
+.scanning-overlay{display:none;position:absolute;inset:0;z-index:10;background:rgba(6,10,18,.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;flex-direction:column;gap:10px}
+.scanning-overlay.on{display:flex}
+.scan-ring{width:56px;height:56px;border-radius:50%;border:3px solid rgba(56,189,248,.15);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scan-txt{font-size:14px;font-weight:700;color:var(--accent)}
+.scan-sub{font-size:11px;color:var(--muted)}
+
+.retake-row{display:none;margin-bottom:12px}
+.btn-retake{width:100%;padding:12px;border-radius:12px;font-size:13px;font-weight:600;background:transparent;color:var(--muted);border:1px solid var(--dim);cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+/* 직접 입력 */
+.divider{display:flex;align-items:center;gap:10px;margin:4px 0 12px;color:var(--dim);font-size:11px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(56,189,248,.08)}
+.manual-label{font-size:11px;color:var(--muted);margin-bottom:6px;display:block}
+.manual-row{display:flex;gap:8px;margin-bottom:14px}
+.manual-input{flex:1;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:700;background:var(--s1);border:1px solid var(--border);color:var(--text);font-family:'Orbitron',monospace;outline:none;letter-spacing:.08em}
+.manual-input::placeholder{font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:400;letter-spacing:0;color:var(--dim)}
+.manual-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(56,189,248,.15)}
+.btn-manual{padding:12px 16px;border-radius:12px;font-size:13px;font-weight:700;background:rgba(56,189,248,.12);color:var(--accent);border:1px solid rgba(56,189,248,.25);cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR',sans-serif}
+
+/* 결과 */
+.result-card{border-radius:18px;overflow:hidden;margin-bottom:14px;animation:slideUp .3s ease-out}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.rh{padding:14px 16px 8px;display:flex;justify-content:space-between;align-items:center}
+.rplate{font-family:'Orbitron',monospace;font-size:1.8rem;font-weight:900;padding:2px 16px 12px;letter-spacing:.1em;word-break:break-all}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 14px}
+.rcell{background:rgba(0,0,0,.25);border-radius:10px;padding:8px 10px}
+.rclbl{font-size:10px;color:var(--muted);margin-bottom:2px}.rcval{font-size:13px;font-weight:600}
+.rmsg{padding:0 16px 14px;font-size:13px;color:var(--muted);line-height:1.7}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.b-ok{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.3)}
+.b-fail{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+.b-scan{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3);animation:blink .8s infinite}
+
+/* 히스토리 */
+.sec-title{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-family:'Orbitron',monospace;font-size:10px;color:var(--dim);letter-spacing:.1em}
+.sec-title::after{content:'';flex:1;height:1px;background:rgba(56,189,248,.08)}
+.hitem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:6px;background:rgba(12,18,32,.8);border:1px solid rgba(56,189,248,.07)}
+.hthumb{width:48px;height:34px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--s2)}
+.hplate{font-family:'Orbitron',monospace;font-size:13px;font-weight:700}
+.hmeta{font-size:11px;color:var(--muted)}.hinfo{flex:1;min-width:0}
+
+/* 등록 차량 목록 */
+.citem{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;margin-bottom:8px;background:var(--s1);border:1px solid rgba(56,189,248,.08)}
+.cnum{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;background:rgba(56,189,248,.08);color:var(--accent)}
+.cplate{font-family:'Orbitron',monospace;font-size:14px;font-weight:700}.cmeta{font-size:11px;color:var(--muted)}
+.ctag{padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700}
+.t-r{background:rgba(16,185,129,.15);color:#34d399}.t-s{background:rgba(99,102,241,.15);color:#a5b4fc}.t-v{background:rgba(245,158,11,.15);color:#fbbf24}
+.guide{background:rgba(56,189,248,.04);border:1px solid rgba(56,189,248,.12);border-radius:14px;padding:14px;margin-top:16px}
+.guide-t{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px}
+.guide-r{font-size:12px;color:var(--muted);line-height:1.8}.guide-r strong{color:#94a3b8}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.97);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:12px;padding:12px 18px;font-size:13px;color:var(--text);z-index:999;display:none;max-width:88vw;text-align:center;white-space:pre-line;line-height:1.7}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--dim);border-radius:2px}
+</style>
+</head>
+<body>
+<header class="hd">
+  <div class="hd-l">
+    <div class="logo">🚗</div>
+    <div>
+      <div class="lt">PLATE CHECKER</div>
+      <div class="ls">번호판 등록 확인 시스템</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px">
+    <div class="dot"></div>
+    <span style="font-size:11px;color:var(--muted)" id="reg-cnt">로딩중</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab on" onclick="switchTab('cam')">📷 카메라 인식</button>
+  <button class="tab" onclick="switchTab('list')">📋 등록 차량</button>
+</div>
+
+<div class="scroll">
+<div class="pg on" id="pg-cam">
+
+  <!-- API 키 -->
+  <div class="keybox" id="keybox">
+    <div class="keybox-head" onclick="toggleKey()">
+      <span style="font-size:16px">🔑</span>
+      <span class="keybox-title">AI 번호판 인식 설정</span>
+      <span class="keystatus need" id="keystatus">키 필요</span>
+      <span id="keyarrow" style="color:var(--muted);font-size:12px;margin-left:6px">▼</span>
+    </div>
+    <div class="keybox-body open" id="keybox-body">
+      <div class="keyrow">
+        <input class="keyinput" id="keyinput" type="password" placeholder="sk-ant-api03-..." autocomplete="off">
+        <button class="keybtn" onclick="applyKey()">저장</button>
+      </div>
+      <div class="keyhint">
+        🔗 <b style="color:#94a3b8">키 발급:</b>
+        <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+        → API Keys → Create Key<br>
+        ✅ <b style="color:#94a3b8">https:// 환경에서는 키가 영구 저장됩니다</b>
+      </div>
+    </div>
+  </div>
+
+  <!-- 엑셀 -->
+  <div class="xbar">
+    <span style="font-size:20px">📂</span>
+    <div class="xbar-info">
+      <div class="xbar-lbl">등록 차량 파일</div>
+      <div class="xbar-nm" id="xfilename">샘플 데이터 (8대)</div>
+    </div>
+    <label class="xbtn">엑셀 업로드<input type="file" accept=".xlsx,.xls" style="display:none" onchange="loadExcel(this)"></label>
+  </div>
+
+  <!-- 촬영 버튼 -->
+  <label class="shoot-label">
+    <span style="font-size:28px">📷</span>
+    <div>
+      <div>번호판 촬영하기</div>
+      <span class="shoot-hint">촬영하면 AI가 즉시 자동 인식합니다</span>
+    </div>
+    <input type="file" id="cam-input" accept="image/*" capture="environment"
+           style="display:none" onchange="onPhoto(this)">
+  </label>
+
+  <!-- 미리보기 -->
+  <div class="preview-wrap" id="preview-wrap">
+    <img id="preview-img" alt="">
+    <div class="scanning-overlay" id="scanning-overlay">
+      <div class="scan-ring"></div>
+      <div class="scan-txt">AI 번호판 인식 중...</div>
+      <div class="scan-sub">잠시만 기다려 주세요</div>
+    </div>
+    <div class="preview-info"><span id="img-info"></span><span id="img-kb"></span></div>
+  </div>
+  <div class="retake-row" id="retake-row">
+    <button class="btn-retake" onclick="retake()">↩ 다시 촬영하기</button>
+  </div>
+
+  <div class="divider">또는 직접 입력</div>
+  <label class="manual-label">번호판 직접 입력 (예: 12가3456)</label>
+  <div class="manual-row">
+    <input class="manual-input" id="manual-input" type="text"
+           placeholder="번호판 입력" maxlength="12"
+           onkeydown="if(event.key==='Enter')manualCheck()">
+    <button class="btn-manual" onclick="manualCheck()">확인</button>
+  </div>
+  <div id="result-area"></div>
+  <div id="history-area"></div>
+</div>
+
+<div class="pg" id="pg-list">
+  <div class="sec-title">등록 차량 목록</div>
+  <div id="car-list"></div>
+  <div class="guide">
+    <div class="guide-t">📌 엑셀 파일 형식</div>
+    <div class="guide-r">첫 행에 <strong>번호판</strong> 컬럼 필수<br>추가: <strong>차주명, 차종, 비고</strong><br>형식: <strong>.xlsx, .xls</strong></div>
+  </div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+let carData=[
+  {번호판:"12가3456",차주명:"홍길동",차종:"현대 소나타",비고:"입주민"},
+  {번호판:"34나5678",차주명:"김철수",차종:"기아 K5",비고:"입주민"},
+  {번호판:"56다7890",차주명:"이영희",차종:"삼성 SM6",비고:"직원"},
+  {번호판:"78라1234",차주명:"박민준",차종:"현대 아반떼",비고:"입주민"},
+  {번호판:"90마5678",차주명:"최수진",차종:"기아 스팅어",비고:"직원"},
+  {번호판:"11바2222",차주명:"정태호",차종:"제네시스 G80",비고:"방문자"},
+  {번호판:"22사3333",차주명:"강지원",차종:"현대 투싼",비고:"입주민"},
+  {번호판:"33아4444",차주명:"윤서연",차종:"기아 스포티지",비고:"입주민"},
+];
+let scanHistory=[], currentImgUrl=null, currentB64=null, scanning=false;
+let activeKey='';
+
+// ── 시작: localStorage 정상 작동 (https://) ──────────────
+window.addEventListener('load',()=>{
+  try{
+    const k=localStorage.getItem('plate_key');
+    if(k){ activeKey=k; document.getElementById('keyinput').value=k; setKeyUI(true); toggleKey(false); }
+  }catch(e){}
+  renderList();
+});
+
+// ── API 키 ────────────────────────────────────────────────
+function applyKey(){
+  const v=document.getElementById('keyinput').value.trim();
+  if(!v){showToast('API 키를 입력해주세요');return;}
+  if(!v.startsWith('sk-')){showToast('sk- 로 시작하는 키를 입력하세요');return;}
+  activeKey=v;
+  try{localStorage.setItem('plate_key',v);}catch(e){}
+  setKeyUI(true); toggleKey(false);
+  showToast('✅ API 키 저장 완료!\n다음부터 자동으로 불러옵니다');
+}
+function setKeyUI(ok){
+  document.getElementById('keystatus').textContent=ok?'연결됨':'키 필요';
+  document.getElementById('keystatus').className='keystatus '+(ok?'ok':'need');
+  document.getElementById('keybox').className='keybox'+(ok?' saved':'');
+}
+function toggleKey(forceOpen){
+  const body=document.getElementById('keybox-body');
+  const arrow=document.getElementById('keyarrow');
+  const open=forceOpen!==undefined?forceOpen:!body.classList.contains('open');
+  body.classList.toggle('open',open);
+  arrow.textContent=open?'▲':'▼';
+}
+
+// ── 탭 ───────────────────────────────────────────────────
+function switchTab(t){
+  ['cam','list'].forEach(id=>document.getElementById('pg-'+id).classList.toggle('on',id===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('on',(i===0&&t==='cam')||(i===1&&t==='list')));
+  if(t==='list') renderList();
+}
+
+// ── 사진 → 자동 AI 인식 ──────────────────────────────────
+function onPhoto(inp){
+  const file=inp.files[0]; if(!file) return;
+  resizeImg(file,1400,(url,b64)=>{
+    currentImgUrl=url; currentB64=b64;
+    document.getElementById('preview-img').src=url;
+    document.getElementById('preview-wrap').style.display='block';
+    document.getElementById('retake-row').style.display='block';
+    document.getElementById('result-area').innerHTML='';
+    document.getElementById('img-info').textContent=file.name.substring(0,26);
+    document.getElementById('img-kb').textContent=Math.round(url.length*.75/1024)+'KB';
+    analyzeAI();
+  });
+}
+function resizeImg(file,maxPx,cb){
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>maxPx||h>maxPx){if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;}}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      const url=c.toDataURL('image/jpeg',0.92);
+      cb(url,url.split(',')[1]);
+    };img.src=e.target.result;
+  };r.readAsDataURL(file);
+}
+function retake(){
+  if(scanning)return;
+  currentImgUrl=null;currentB64=null;
+  document.getElementById('preview-wrap').style.display='none';
+  document.getElementById('retake-row').style.display='none';
+  document.getElementById('cam-input').value='';
+  document.getElementById('result-area').innerHTML='';
+  document.getElementById('scanning-overlay').classList.remove('on');
+}
+
+// ── Claude Vision API ─────────────────────────────────────
+async function analyzeAI(){
+  if(!currentB64||scanning) return;
+  if(!activeKey){ showToast('🔑 API 키를 먼저 입력해주세요'); toggleKey(true); return; }
+  scanning=true;
+  document.getElementById('scanning-overlay').classList.add('on');
+  showResultScanning();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':activeKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:80,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:currentB64}},
+          {type:'text',text:'이 사진에서 한국 자동차 번호판을 찾아 번호판 텍스트만 출력하세요.\n규칙: 번호판 텍스트만(예:12가3456), 공백없이, 번호판없으면 "없음", 설명금지'}
+        ]}]
+      })
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error((data?.error?.type||'')+': '+(data?.error?.message||'HTTP '+res.status));
+    const raw=(data.content?.[0]?.text||'').trim().replace(/\s+/g,'');
+    document.getElementById('scanning-overlay').classList.remove('on');
+    addResult((raw==='없음'||!raw)?'':raw, currentImgUrl);
+  }catch(e){
+    document.getElementById('scanning-overlay').classList.remove('on');
+    let msg=e.message, detail='';
+    if(msg.includes('auth')||msg.includes('401')||msg.includes('api_key')){
+      msg='API 키 인증 실패';
+      detail='키를 다시 확인해주세요.';
+      setKeyUI(false); toggleKey(true);
+    } else if(msg.includes('fetch')||msg.includes('Failed')){
+      msg='네트워크 오류';
+      detail='인터넷 연결을 확인해주세요.';
+    } else if(msg.includes('429')){
+      msg='요청 한도 초과';
+      detail='잠시 후 다시 시도해주세요.';
+    }
+    showResultError(msg, detail);
+  }finally{scanning=false;}
+}
+
+// ── 직접 입력 ─────────────────────────────────────────────
+function manualCheck(){
+  const val=document.getElementById('manual-input').value.trim();
+  if(!val){showToast('번호판을 입력해주세요');return;}
+  addResult(val,null);
+  document.getElementById('manual-input').value='';
+}
+function addResult(plate,img){
+  const row=plate?lookup(plate):null;
+  const entry={plate:plate||'인식 실패',found:!!plate,row,registered:!!row,
+    time:new Date().toLocaleTimeString('ko-KR'),image:img};
+  scanHistory.unshift(entry);
+  if(scanHistory.length>20)scanHistory.pop();
+  showResult(entry); renderHistory();
+}
+function norm(t){return(t||'').replace(/[\s\-\.]/g,'').toUpperCase();}
+function lookup(t){const n=norm(t);return carData.find(r=>norm(r['번호판']||'')===n)||null;}
+
+// ── UI ───────────────────────────────────────────────────
+function showResultScanning(){
+  document.getElementById('result-area').innerHTML=`
+  <div class="result-card" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2)">
+    <div class="rh"><span class="badge b-scan">🤖 AI 분석 중...</span></div>
+    <div class="rplate" style="color:var(--amber)">인식 중...</div>
+  </div>`;
+}
+function showResult(e){
+  const{plate,row,registered,time}=e;
+  const col=registered?'var(--green)':'var(--red)';
+  const bg=registered?'rgba(16,185,129,.06)':'rgba(239,68,68,.06)';
+  const bdr=registered?'rgba(16,185,129,.25)':'rgba(239,68,68,.25)';
+  const badge=registered?'<span class="badge b-ok">✔ 등록 차량</span>':'<span class="badge b-fail">✘ 미등록 차량</span>';
+  let detail='';
+  if(row){detail=`<div class="rgrid">${[['차주',row['차주명']],['차종',row['차종']],['비고',row['비고']],['번호판',row['번호판']]].map(([l,v])=>`<div class="rcell"><div class="rclbl">${l}</div><div class="rcval">${v||'-'}</div></div>`).join('')}</div>`;}
+  else if(e.found){detail=`<div class="rmsg">등록되지 않은 차량입니다.</div>`;}
+  else{detail=`<div class="rmsg">번호판을 인식하지 못했습니다.<br><strong>직접 입력</strong>으로 확인하세요.</div>`;}
+  document.getElementById('result-area').innerHTML=`
+  <div class="result-card" style="background:${bg};border:1px solid ${bdr}">
+    <div class="rh">${badge}<span style="font-size:11px;color:var(--muted)">${time}</span></div>
+    <div class="rplate" style="color:${col};text-shadow:0 0 18px ${col}">${plate}</div>${detail}
+  </div>`;
+}
+function showResultError(msg,detail=''){
+  document.getElementById('result-area').innerHTML=`
+  <div class="result-card" style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2)">
+    <div class="rh"><span class="badge b-fail">⚠ ${msg}</span></div>
+    ${detail?`<div class="rmsg" style="color:#fca5a5">${detail}</div>`:''}
+    <div class="rmsg">📌 아래 <strong>직접 입력</strong>으로 번호판을 확인하세요.</div>
+  </div>`;
+}
+function renderHistory(){
+  if(!scanHistory.length){document.getElementById('history-area').innerHTML='';return;}
+  document.getElementById('history-area').innerHTML=`
+  <div class="sec-title" style="margin-top:4px">최근 조회</div>
+  ${scanHistory.slice(0,6).map(h=>`
+  <div class="hitem">
+    ${h.image?`<img class="hthumb" src="${h.image}" alt="">`:'<div class="hthumb"></div>'}
+    <div class="hinfo">
+      <div class="hplate" style="color:${h.registered?'var(--green)':'var(--red)'}">${h.plate}</div>
+      <div class="hmeta">${h.time} · ${h.registered?(h.row?.['차주명']||''):'미등록'}</div>
+    </div>
+    <span class="badge ${h.registered?'b-ok':'b-fail'}">${h.registered?'등록':'미등록'}</span>
+  </div>`).join('')}`;
+}
+function renderList(){
+  const tc=b=>b==='직원'?'t-s':b==='방문자'?'t-v':'t-r';
+  document.getElementById('car-list').innerHTML=carData.map((r,i)=>`
+  <div class="citem">
+    <div class="cnum">${i+1}</div>
+    <div style="flex:1;min-width:0"><div class="cplate">${r['번호판']||''}</div><div class="cmeta">${r['차주명']||''} · ${r['차종']||''}</div></div>
+    <span class="ctag ${tc(r['비고'])}">${r['비고']||'입주민'}</span>
+  </div>`).join('');
+  document.getElementById('reg-cnt').textContent=carData.length+'대 등록';
+}
+function loadExcel(inp){
+  const file=inp.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const json=XLSX.utils.sheet_to_json(ws);
+      if(!json.length){showToast('데이터가 없습니다');return;}
+      if(!Object.keys(json[0]).includes('번호판')){showToast('"번호판" 컬럼이 필요합니다');return;}
+      carData=json;
+      document.getElementById('xfilename').textContent=`${file.name} (${json.length}대)`;
+      document.getElementById('reg-cnt').textContent=json.length+'대 등록';
+      showToast('✅ '+json.length+'대 차량 로드 완료');
+    }catch(err){showToast('파싱 실패: '+err.message);}
+  };r.readAsArrayBuffer(file);
+}
+let toastT=null;
+function showToast(msg){
+  clearTimeout(toastT);const el=document.getElementById('toast');
+  el.textContent=msg;el.style.display='block';
+  toastT=setTimeout(()=>el.style.display='none',4000);
+}
+</script>
+</body>
+</html>
